@@ -10,6 +10,7 @@ import { editContext, EditContextSchema } from "./tools/context.edit.js";
 import { deleteContext, DeleteContextSchema } from "./tools/context.delete.js";
 import { globalContexts } from "./tools/context.global.js";
 import { contextBySession, ContextBySessionSchema } from "./tools/context.by-session.js";
+import { eventList, EventListSchema } from "./tools/event.list.js";
 
 const server = new McpServer({
     name: "fixture_mcp",
@@ -20,7 +21,7 @@ const server = new McpServer({
 server.registerTool(
     "curl",
     {
-        description: "Execute an HTTP request with optional session context injection",
+        description: "Execute an HTTP request and record an event in the session log. Every request requires a session slug, and you should include a reason explaining why the request is being made.",
         inputSchema: CurlSchema,
     },
     async (args) => {
@@ -151,6 +152,20 @@ server.registerTool(
     },
     async (args) => {
         const result = await contextBySession(args);
+        return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+        };
+    },
+);
+
+server.registerTool(
+    "event_list",
+    {
+        description: "List events recorded for a session. Events are created by curl calls and include input, output, timestamp, and the reason the request was made.",
+        inputSchema: EventListSchema,
+    },
+    async (args) => {
+        const result = await eventList(args);
         return {
             content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
         };

@@ -26,3 +26,13 @@ export const contexts = sqliteTable("contexts", {
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });
+
+export const events = sqliteTable("events", {
+    id: text("id").primaryKey(),
+    sessionSlug: text("session_slug").notNull(),
+    tool: text("tool").notNull(),
+    input: text("input").notNull(),
+    output: text("output").notNull(),
+    reason: text("reason"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+});
