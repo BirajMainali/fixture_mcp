@@ -1,17 +1,39 @@
 {
-  "name": "fixture",
+  "name": "fixture-mcp",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "description": "MCP server for stateful API testing by AI agents. Persists sessions, context, events, and workflows in SQLite via Drizzle ORM.",
+  "main": "build/index.js",
+  "keywords": [
+    "mcp",
+    "modelcontextprotocol",
+    "api-testing",
+    "testing",
+    "ai-agents",
+    "sqlite",
+    "drizzle"
+  ],
+  "author": "birajmainali",
+  "license": "MIT",
   "type": "module",
   "bin": {
-    "weather": "./build/index.js"
+    "fixture-mcp": "./build/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BirajMainali/fixture_mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BirajMainali/fixture_mcp/issues"
+  },
+  "homepage": "https://github.com/BirajMainali/fixture_mcp#readme",
+  "engines": {
+    "node": ">=19"
   },
   "scripts": {
-    "build": "vitest run && tsc && chmod 755 build/index.js"
+    "build": "vitest run && tsc && chmod 755 build/index.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "inspect": "npx @modelcontextprotocol/inspector node build/index.js"
   },
   "files": [
     "build"

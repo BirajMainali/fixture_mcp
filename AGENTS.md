@@ -16,7 +16,7 @@ Tests live in `src/__tests__/*.test.ts` (6 files, 68 tests, 100% coverage across
 ## Architecture
 
 - **Entrypoint**: `src/index.ts` — registers 15 MCP tools on `StdioServerTransport`.
-- **Package bin name**: `weather` (not fixture). Set via `"bin": {"weather": "./build/index.js"}` in `package.json`.
+- **Package bin name**: `fixture-mcp`. Set via `"bin": {"fixture-mcp": "./build/index.js"}` in `package.json`.
 - **Database**: `fixture.db` created lazily by better-sqlite3 in `src/db/client.ts` (no migrations, no drizzle-kit config). Not in `.gitignore` — guard against committing it.
 - **Schema** (`src/db/schema.ts`): 5 tables — `sessions`, `contexts`, `events`, `workflows`, `workflow_runs`.
 - **IDs**: `crypto.randomUUID()` — requires Node 19+.
