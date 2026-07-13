@@ -18,12 +18,25 @@ const WorkflowStepSchema = z.object({
         prompt: z.string().min(1),
         captureVar: z.string().min(1),
     }).optional(),
+    assert: z.array(z.object({
+        type: z.enum([
+            "status.equals", "status.in", "status.range",
+            "body.exists", "body.equals", "body.contains", "body.length",
+            "header.exists", "header.equals", "header.contains",
+        ]),
+        path: z.string().optional().describe("JSON dot-path for body assertions"),
+        key: z.string().optional().describe("Header name for header assertions"),
+        value: z.union([z.number(), z.string(), z.array(z.number())]).optional().describe("Expected value (status code, string, or array for status.in)"),
+        min: z.number().optional().describe("Minimum for status.range"),
+        max: z.number().optional().describe("Maximum for status.range"),
+        substr: z.string().optional().describe("Substring for body.contains / header.contains"),
+    })).optional().describe("Assertions to validate the HTTP response. All assertions run; step is marked assert_failed on any failure but execution continues."),
 });
 
 export const CreateWorkflowSchema = z.object({
     slug: z.string().min(1).describe("Unique identifier for the workflow. Used to reference it in workflow_run."),
     description: z.string().optional().describe("Optional description of what this workflow does."),
-    steps: z.array(WorkflowStepSchema).min(1).describe("Array of curated workflow steps. For HTTP steps, provide method, url, and optionally headers, body, extract, reason. For manual-input steps, provide requiresInput."),
+    steps: z.array(WorkflowStepSchema).min(1).describe("Array of curated workflow steps. For HTTP steps, provide method, url, and optionally headers, body, extract, reason, assert. For manual-input steps, provide requiresInput."),
 });
 
 export async function createWorkflow(data: z.infer<typeof CreateWorkflowSchema>) {

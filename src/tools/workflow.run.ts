@@ -22,6 +22,59 @@ function resolvePath(obj: unknown, path: string): unknown {
     }, obj);
 }
 
+function tryParseJSON(s: string): unknown {
+    try { return JSON.parse(s); } catch { return {}; }
+}
+
+function runAssertions(asserts: AssertDef[], output: {
+    status: number;
+    headers: Record<string, string>;
+    body: string;
+}): AssertResult[] {
+    return asserts.map((a) => {
+        switch (a.type) {
+            case "status.equals":
+                return { type: a.type, passed: output.status === a.value, expected: a.value, actual: output.status };
+            case "status.in": {
+                const allowed = a.value as number[] | undefined;
+                return { type: a.type, passed: allowed?.includes(output.status) ?? false, expected: a.value, actual: output.status };
+            }
+            case "status.range":
+                return {
+                    type: a.type, passed: output.status >= (a.min ?? 0) && output.status <= (a.max ?? 999),
+                    expected: `${a.min ?? 0}–${a.max ?? 999}`, actual: output.status,
+                };
+            case "body.exists": {
+                const val = resolvePath(tryParseJSON(output.body), a.path ?? "");
+                return { type: a.type, passed: val !== undefined, path: a.path, actual: val };
+            }
+            case "body.equals": {
+                const val = resolvePath(tryParseJSON(output.body), a.path ?? "");
+                return { type: a.type, passed: val === a.value, path: a.path, expected: a.value, actual: val };
+            }
+            case "body.contains": {
+                const val = resolvePath(tryParseJSON(output.body), a.path ?? "");
+                return { type: a.type, passed: String(val ?? "").includes(a.substr ?? ""), path: a.path, expected: a.substr, actual: val };
+            }
+            case "body.length": {
+                const val = resolvePath(tryParseJSON(output.body), a.path ?? "");
+                return {
+                    type: a.type, passed: Array.isArray(val) && val.length === a.value,
+                    path: a.path, expected: a.value, actual: Array.isArray(val) ? val.length : undefined,
+                };
+            }
+            case "header.exists":
+                return { type: a.type, passed: output.headers[a.key ?? ""] !== undefined, key: a.key, actual: output.headers[a.key ?? ""] };
+            case "header.equals":
+                return { type: a.type, passed: output.headers[a.key ?? ""] === a.value, key: a.key, expected: a.value, actual: output.headers[a.key ?? ""] };
+            case "header.contains":
+                return { type: a.type, passed: (output.headers[a.key ?? ""] ?? "").includes(a.substr ?? ""), key: a.key, expected: a.substr, actual: output.headers[a.key ?? ""] };
+            default:
+                return { type: a.type, passed: false, error: "unknown assertion type" };
+        }
+    });
+}
+
 async function ensureSession(slug: string) {
     const existing = await db.select().from(sessions).where(eq(sessions.slug, slug)).limit(1);
     if (existing.length === 0) {
@@ -35,11 +88,31 @@ async function ensureSession(slug: string) {
     }
 }
 
+type AssertDef = {
+    type: string;
+    path?: string;
+    key?: string;
+    value?: number | string | number[];
+    min?: number;
+    max?: number;
+    substr?: string;
+};
+
+type AssertResult = {
+    type: string;
+    passed: boolean;
+    path?: string;
+    key?: string;
+    expected?: unknown;
+    actual?: unknown;
+};
+
 export type StepResult = {
     stepId: string;
-    status: "success" | "error" | "skipped";
+    status: "success" | "error" | "skipped" | "assert_failed";
     output?: unknown;
     error?: string;
+    assertions?: AssertResult[];
 };
 
 export async function executeSteps(
@@ -69,6 +142,7 @@ export async function executeSteps(
             reason?: string;
             extract?: { var: string; from: string; path: string }[];
             requiresInput?: { prompt: string; captureVar: string };
+            assert?: AssertDef[];
         };
 
         if (step.requiresInput && variables[step.requiresInput.captureVar] === undefined) {
@@ -139,6 +213,16 @@ export async function executeSteps(
                     }
                 }
 
+                let stepStatus: "success" | "assert_failed" = "success";
+                let stepAssertions: AssertResult[] | undefined;
+
+                if (step.assert) {
+                    stepAssertions = runAssertions(step.assert, output);
+                    if (stepAssertions.some(a => !a.passed)) {
+                        stepStatus = "assert_failed";
+                    }
+                }
+
                 await emitEvent({
                     sessionSlug,
                     tool: "workflow_step",
@@ -154,7 +238,7 @@ export async function executeSteps(
                     reason: step.reason,
                 });
 
-                results.push({ stepId: step.id, status: "success", output });
+                results.push({ stepId: step.id, status: stepStatus, output, assertions: stepAssertions });
             } catch (err) {
                 results.push({ stepId: step.id, status: "error", error: String(err) });
             }
