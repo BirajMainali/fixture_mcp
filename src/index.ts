@@ -11,6 +11,10 @@ import { deleteContext, DeleteContextSchema } from "./tools/context.delete.js";
 import { globalContexts } from "./tools/context.global.js";
 import { contextBySession, ContextBySessionSchema } from "./tools/context.by-session.js";
 import { eventList, EventListSchema } from "./tools/event.list.js";
+import { createWorkflow, CreateWorkflowSchema } from "./tools/workflow.create.js";
+import { listWorkflows } from "./tools/workflow.list.js";
+import { runWorkflow, RunWorkflowSchema } from "./tools/workflow.run.js";
+import { continueWorkflow, ContinueWorkflowSchema } from "./tools/workflow.continue.js";
 
 const server = new McpServer({
     name: "fixture_mcp",
@@ -166,6 +170,62 @@ server.registerTool(
     },
     async (args) => {
         const result = await eventList(args);
+        return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+        };
+    },
+);
+
+server.registerTool(
+    "workflow_create",
+    {
+        description: "Persist a curated workflow definition. The AI should analyze session events to identify variable flows, then pass the curated steps here.",
+        inputSchema: CreateWorkflowSchema,
+    },
+    async (args) => {
+        const result = await createWorkflow(args);
+        return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+        };
+    },
+);
+
+server.registerTool(
+    "workflow_list",
+    {
+        description: "List all persisted curated workflows.",
+        inputSchema: {},
+    },
+    async () => {
+        const result = await listWorkflows();
+        return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+        };
+    },
+);
+
+server.registerTool(
+    "workflow_run",
+    {
+        description: "Execute a curated workflow. Resolves ${var} in step url/headers/body, extracts variables from responses, and pauses for manual input when a step requires it.",
+        inputSchema: RunWorkflowSchema,
+    },
+    async (args) => {
+        const result = await runWorkflow(args);
+        return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+        };
+    },
+);
+
+server.registerTool(
+    "workflow_continue",
+    {
+        description: "Resume a paused workflow run by providing the requested input value. Pass the continuationToken and the user's input.",
+        inputSchema: ContinueWorkflowSchema,
+    },
+    async (args) => {
+        const result = await continueWorkflow(args);
         return {
             content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
         };
