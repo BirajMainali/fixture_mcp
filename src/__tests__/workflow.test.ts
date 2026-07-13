@@ -87,7 +87,7 @@ describe('workflow tools', () => {
     it('returns error when workflow not found', async () => {
       limitMock.mockResolvedValue([]);
 
-      const result = await runWorkflow({ slug: 'nonexistent', session: 'sess-1' });
+      const result = await runWorkflow({ slug: 'nonexistent' });
 
       expect(result).toEqual({ status: 'error', message: 'Workflow "nonexistent" not found' });
     });
@@ -101,7 +101,6 @@ describe('workflow tools', () => {
         ]),
       };
       limitMock.mockResolvedValueOnce([workflow]);
-      limitMock.mockResolvedValueOnce([]);
       returningMock.mockResolvedValue([{ id: 'run-1', status: 'running' }]);
 
       const mockResponse = {
@@ -112,7 +111,7 @@ describe('workflow tools', () => {
       };
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse));
 
-      const result = await runWorkflow({ slug: 'wf-test', session: 'sess-1' });
+      const result = await runWorkflow({ slug: 'wf-test' });
 
       expect(result).toHaveProperty('status', 'completed');
       expect(result).toHaveProperty('results');
@@ -135,7 +134,6 @@ describe('workflow tools', () => {
         ]),
       };
       limitMock.mockResolvedValueOnce([workflow]);
-      limitMock.mockResolvedValueOnce([]);
       returningMock.mockResolvedValue([{ id: 'run-2' }]);
 
       const mockResponse = {
@@ -146,7 +144,7 @@ describe('workflow tools', () => {
       };
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse));
 
-      const result = await runWorkflow({ slug: 'wf-extract', session: 'sess-1' });
+      const result = await runWorkflow({ slug: 'wf-extract' });
 
       expect(result).toHaveProperty('status', 'completed');
     });
@@ -165,7 +163,6 @@ describe('workflow tools', () => {
         ]),
       };
       limitMock.mockResolvedValueOnce([workflow]);
-      limitMock.mockResolvedValueOnce([]);
       returningMock.mockResolvedValue([{ id: 'run-3' }]);
 
       const mockResponse = {
@@ -176,7 +173,7 @@ describe('workflow tools', () => {
       };
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse));
 
-      const result = await runWorkflow({ slug: 'wf-extract-header', session: 'sess-1' });
+      const result = await runWorkflow({ slug: 'wf-extract-header' });
 
       expect(result).toHaveProperty('status', 'completed');
     });
@@ -195,7 +192,6 @@ describe('workflow tools', () => {
         ]),
       };
       limitMock.mockResolvedValueOnce([workflow]);
-      limitMock.mockResolvedValueOnce([]);
       returningMock.mockResolvedValue([{ id: 'run-4' }]);
 
       const mockResponse = {
@@ -206,7 +202,7 @@ describe('workflow tools', () => {
       };
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse));
 
-      const result = await runWorkflow({ slug: 'wf-assert', session: 'sess-1' });
+      const result = await runWorkflow({ slug: 'wf-assert' });
 
       expect(result).toHaveProperty('status', 'completed');
       expect((result as any).results[0].status).toBe('assert_failed');
@@ -221,37 +217,15 @@ describe('workflow tools', () => {
         ]),
       };
       limitMock.mockResolvedValueOnce([workflow]);
-      limitMock.mockResolvedValueOnce([]);
       returningMock.mockResolvedValue([{ id: 'run-5' }]);
 
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Connection timeout')));
 
-      const result = await runWorkflow({ slug: 'wf-error', session: 'sess-1' });
+      const result = await runWorkflow({ slug: 'wf-error' });
 
       expect(result).toHaveProperty('status', 'completed');
       expect((result as any).results[0].status).toBe('error');
       expect((result as any).results[0].error).toContain('Connection timeout');
-    });
-
-    it('auto-creates session only when it does not exist (existing session)', async () => {
-      const workflow = {
-        id: 'wf-sess',
-        slug: 'wf-sess',
-        steps: JSON.stringify([
-          { id: 's1', method: 'GET', url: 'https://example.com' },
-        ]),
-      };
-      limitMock.mockResolvedValueOnce([workflow]);
-      limitMock.mockResolvedValueOnce([{ id: 1, slug: 'sess-1' }]);
-      returningMock.mockResolvedValue([{ id: 'run-sess' }]);
-
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-        status: 200, statusText: 'OK', headers: new Headers(),
-        text: vi.fn().mockResolvedValue('ok'),
-      }));
-      const result = await runWorkflow({ slug: 'wf-sess', session: 'sess-1' });
-
-      expect(result).toHaveProperty('status', 'completed');
     });
 
     it('pauses at requiresInput step when variable is missing', async () => {
@@ -265,7 +239,6 @@ describe('workflow tools', () => {
         ]),
       };
       limitMock.mockResolvedValueOnce([workflow]);
-      limitMock.mockResolvedValueOnce([]);
       returningMock.mockResolvedValue([{ id: 'run-6' }]);
 
       const mockResponse = {
@@ -276,7 +249,7 @@ describe('workflow tools', () => {
       };
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse));
 
-      const result = await runWorkflow({ slug: 'wf-pause', session: 'sess-1' });
+      const result = await runWorkflow({ slug: 'wf-pause' });
 
       expect(result).toHaveProperty('status', 'paused');
       expect(result).toHaveProperty('continuationToken', 'run-6');

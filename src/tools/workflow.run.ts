@@ -1,12 +1,11 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { workflows, workflowRuns, sessions } from "../db/schema.js";
+import { workflows, workflowRuns } from "../db/schema.js";
 import { emitEvent } from "../db/event-helper.js";
 
 export const RunWorkflowSchema = z.object({
     slug: z.string().min(1).describe("Slug of the curated workflow to run, as created by workflow_create."),
-    session: z.string().min(1).describe("Session slug to record replay events under. Created automatically if it doesn't exist."),
 });
 
 function resolveVars(template: string, vars: Record<string, string>): string {
@@ -73,19 +72,6 @@ function runAssertions(asserts: AssertDef[], output: {
                 return { type: a.type, passed: false, error: "unknown assertion type" };
         }
     });
-}
-
-async function ensureSession(slug: string) {
-    const existing = await db.select().from(sessions).where(eq(sessions.slug, slug)).limit(1);
-    if (existing.length === 0) {
-        const now = new Date();
-        await db.insert(sessions).values({
-            slug,
-            description: "Auto-created by workflow_run",
-            createdAt: now,
-            updatedAt: now,
-        });
-    }
 }
 
 type AssertDef = {
@@ -268,13 +254,13 @@ export async function runWorkflow(data: z.infer<typeof RunWorkflowSchema>) {
         return { status: "error", message: `Workflow "${data.slug}" not found` };
     }
 
-    await ensureSession(data.session);
+    const sessionSlug = crypto.randomUUID();
 
     const now = new Date();
     const [run] = await db.insert(workflowRuns).values({
         id: crypto.randomUUID(),
         workflowId: workflow.id,
-        sessionSlug: data.session,
+        sessionSlug,
         currentStepIndex: 0,
         variables: "{}",
         status: "running",
@@ -283,5 +269,5 @@ export async function runWorkflow(data: z.infer<typeof RunWorkflowSchema>) {
         updatedAt: now,
     }).returning();
 
-    return executeSteps(run.id, workflow, data.session, {}, 0, []);
+    return executeSteps(run.id, workflow, sessionSlug, {}, 0, []);
 }
