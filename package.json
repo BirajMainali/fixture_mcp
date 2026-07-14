@@ -37,7 +37,8 @@
     "postinstall": "npm rebuild better-sqlite3"
   },
   "files": [
-    "build"
+    "build",
+    "drizzle"
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
