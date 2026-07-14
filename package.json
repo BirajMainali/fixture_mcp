@@ -1,6 +1,6 @@
 {
   "name": "fixture-mcp",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "MCP server for stateful API testing by AI agents. Persists sessions, context, events, and workflows in SQLite via Drizzle ORM.",
   "main": "build/index.js",
   "keywords": [
