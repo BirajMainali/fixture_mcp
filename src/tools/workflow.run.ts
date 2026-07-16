@@ -2,7 +2,7 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { workflows, workflowRuns } from "../db/schema.js";
-import { emitEvent } from "../db/event-helper.js";
+
 
 export const RunWorkflowSchema = z.object({
     slug: z.string().min(1).describe("Slug of the curated workflow to run, as created by workflow_create."),
@@ -208,21 +208,6 @@ export async function executeSteps(
                         stepStatus = "assert_failed";
                     }
                 }
-
-                await emitEvent({
-                    sessionSlug,
-                    tool: "workflow_step",
-                    input: {
-                        stepId: step.id,
-                        method: step.method,
-                        url: resolvedUrl,
-                        headers: resolvedHeaders,
-                        body: resolvedBody,
-                        reason: step.reason,
-                    },
-                    output,
-                    reason: step.reason,
-                });
 
                 results.push({ stepId: step.id, status: stepStatus, output, assertions: stepAssertions });
             } catch (err) {

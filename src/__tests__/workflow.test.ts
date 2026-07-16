@@ -1,7 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const emitEventMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
-
 const { db, returningMock, orderByMock, limitMock, thenMock } = vi.hoisted(() => {
   const returningMock = vi.fn(() => Promise.resolve([{ id: 1 }]));
   const orderByMock = vi.fn(() => Promise.resolve([]));
@@ -27,7 +25,6 @@ const { db, returningMock, orderByMock, limitMock, thenMock } = vi.hoisted(() =>
 });
 
 vi.mock('../db/client.js', () => ({ db }));
-vi.mock('../db/event-helper.js', () => ({ emitEvent: emitEventMock }));
 vi.mock('drizzle-orm', () => ({ eq: vi.fn((a, b) => ({ a, b })) }));
 
 import { createWorkflow } from '../tools/workflow.create.js';

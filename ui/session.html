@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Session · Fixture</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -11,8 +12,13 @@
 </head>
 <body>
 <div class="app">
-  <a class="back" href="/">&larr; Dashboard</a>
-  <h1 id="slug"></h1>
+  <header>
+    <div class="header-left">
+      <img src="/favicon.svg" alt="" class="logo">
+      <a class="back" href="/">&larr; Dashboard</a>
+      <h1 id="slug"></h1>
+    </div>
+  </header>
   <div class="meta" id="meta"></div>
   <div id="events"><div class="empty">Loading...</div></div>
 </div>
@@ -44,18 +50,17 @@ async function load() {
     try { inp = JSON.parse(e.input); } catch { inp = e.input; }
     try { out = JSON.parse(e.output); } catch { out = e.output; }
 
-    const method = inp?.method ?? inp?.stepId ?? "?";
+    const method = inp?.method ?? "?";
     const url = inp?.url ?? "";
     const status = out?.status ?? "";
     const statusClass = status ? (status < 300 ? "2xx" : status < 400 ? "3xx" : status < 500 ? "4xx" : "5xx") : "";
     const reason = e.reason ?? inp?.reason ?? "";
-    const isWorkflowStep = e.tool === "workflow_step";
 
     return `<div class="event">
       <div class="event-header" onclick="toggle(${i})">
         <span class="arrow" id="arrow-${i}">&#9654;</span>
-        ${isWorkflowStep ? `<span class="tool-badge">step</span>` : `<span class="method method-${method}">${method}</span>`}
-        <span class="url">${esc(url) || esc(inp?.stepId ?? "")}</span>
+        <span class="method method-${method}">${method}</span>
+        <span class="url">${esc(url)}</span>
         ${status ? `<span class="status status-${statusClass}">${status}</span>` : ""}
         <span class="reason">${esc(reason)}</span>
         <span class="timestamp">${fmt(e.createdAt)}</span>

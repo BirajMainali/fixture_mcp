@@ -277,8 +277,14 @@ if (isServe) {
     res.sendFile(path.join(uiDir, "index.html"));
   });
 
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     console.log(`Fixture UI → http://localhost:${PORT}`);
     console.log(`MCP endpoint → http://localhost:${PORT}/mcp`);
+    const { exec } = await import("child_process");
+    const url = `http://localhost:${PORT}`;
+    const platform = process.platform;
+    if (platform === "darwin") exec(`open ${url}`);
+    else if (platform === "win32") exec(`start ${url}`);
+    else exec(`xdg-open ${url}`);
   });
 }
