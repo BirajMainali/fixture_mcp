@@ -8,7 +8,7 @@ AI agents that test APIs make many HTTP requests. Without persistent state, ever
 
 ## What this does
 
-fixture-mcp is an MCP server that runs over stdio. It gives an AI agent persistent storage for API testing sessions, key-value context, event logs, and multi-step workflows.
+fixture-mcp is an MCP server for AI agents with persistent storage for API testing sessions, key-value context, event logs, and multi-step workflows. It always speaks MCP over stdio for AI agent integration, and can additionally start a web dashboard with an HTTP MCP endpoint.
 
 The agent creates a session, makes HTTP requests, and stores responses as events. It can save extracted values into context (global or per-session) and reference them later. Workflows let the agent define a sequence of steps once and replay them, with variable interpolation, response extraction, assertions, and manual input prompts.
 
@@ -52,6 +52,17 @@ All data is stored in a local `fixture.db` file created automatically in the wor
 
 Assertions run against the HTTP response. They do not stop execution on failure, but the step status reflects which assertions passed or failed. Types include status equals, range, or set membership; body existence, equality, containment, or array length; and header existence, equality, or containment.
 
+## Web UI
+
+fixture-mcp always serves MCP over stdio for AI agent integration. Pass `--serve` or set `FIXTURE_UI_PORT` to also start a web dashboard:
+
+| Flag | Effect |
+|------|--------|
+| none | MCP over stdio only (AI agents) |
+| `--serve` or `FIXTURE_UI_PORT` env | Adds Express server with UI at `http://localhost:4321` + MCP at `/mcp` |
+
+Stdio MCP always runs, so your existing MCP host config keeps working. Serve mode just adds the HTTP server on top.
+
 ## Installation
 
 ```
@@ -62,13 +73,13 @@ Requires Node 19 or later (uses `crypto.randomUUID()`).
 
 ## Usage
 
-Run the server on stdio:
+Run in stdio mode (default — for AI agents):
 
 ```
 fixture-mcp
 ```
 
-This is not a standalone CLI. It is an MCP server that communicates over stdin/stdout. Configure it in your MCP host (Claude desktop, AI agent, etc.):
+Configure it in your MCP host (Claude desktop, Cursor, etc.):
 
 ```json
 {
@@ -79,6 +90,27 @@ This is not a standalone CLI. It is an MCP server that communicates over stdin/s
       "env": {
         "FIXTURE_DB_PATH": "/path/to/custom.db"
       }
+    }
+  }
+}
+```
+
+Run in serve mode (web UI + HTTP MCP):
+
+```
+fixture-mcp --serve
+# or
+FIXTURE_UI_PORT=4321 fixture-mcp
+```
+
+For a streamable HTTP MCP host, configure the URL (not stdio):
+
+```json
+{
+  "mcpServers": {
+    "fixture-mcp": {
+      "type": "url",
+      "url": "http://localhost:4321/mcp"
     }
   }
 }

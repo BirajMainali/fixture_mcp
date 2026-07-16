@@ -1,0 +1,13 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "fixture-mcp": {
+      "type": "local",
+      "command": ["node", "./build/index.js", "--serve"],
+      "enabled": true,
+      "environment": {
+        "FIXTURE_DB_PATH": "./fixture.db"
+      }
+    }
+  }
+}

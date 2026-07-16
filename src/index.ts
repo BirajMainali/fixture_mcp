@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 import { createMcpServer } from "./create-mcp-server.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 const args = process.argv.slice(2);
 const isServe = args.includes("--serve") || !!process.env.FIXTURE_UI_PORT;
+
+const stdioServer = createMcpServer();
+const stdioTransport = new StdioServerTransport();
+await stdioServer.connect(stdioTransport);
 
 if (isServe) {
   const express = await import("express");
@@ -16,7 +21,7 @@ if (isServe) {
     getSessionCount, getEventCount, getWorkflowCount, getRunCount,
     getGlobalContextCount, getLocalContextCount, getLocalContexts,
   } = await import("./ui/queries.js");
-  const { createSession, CreateSessionSchema } = await import("./tools/session.create.js");
+  const { createSession } = await import("./tools/session.create.js");
   const { editSession } = await import("./tools/session.edit.js");
   const { deleteSession } = await import("./tools/session.delete.js");
   const { createContext } = await import("./tools/context.create.js");
@@ -32,13 +37,13 @@ if (isServe) {
   const __dirname = path.dirname(__filename);
   const uiDir = path.resolve(__dirname, "../ui");
 
-  const mcpServer = createMcpServer();
+  const httpMcpServer = createMcpServer();
 
   const mcpTransport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => crypto.randomUUID(),
   });
 
-  await mcpServer.connect(mcpTransport);
+  await httpMcpServer.connect(mcpTransport);
 
   const app = express.default();
   const PORT = parseInt(process.env.FIXTURE_UI_PORT ?? "4321", 10);
@@ -276,9 +281,4 @@ if (isServe) {
     console.log(`Fixture UI → http://localhost:${PORT}`);
     console.log(`MCP endpoint → http://localhost:${PORT}/mcp`);
   });
-} else {
-  const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
-  const server = createMcpServer();
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
 }
