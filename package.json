@@ -34,8 +34,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "inspect": "npx @modelcontextprotocol/inspector node build/index.js",
-    "ui": "node build/server.js",
-    "start": "node build/server.js",
+    "ui": "node build/index.js --serve",
+    "start": "node build/index.js --serve",
     "seed": "node scripts/seed.mjs",
     "postinstall": "npm rebuild better-sqlite3"
   },

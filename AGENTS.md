@@ -8,14 +8,16 @@ MCP server for stateful API testing by AI agents. Persists sessions, context, ev
 npm run build        # vitest run && tsc && chmod 755 build/index.js (tests run before compile)
 npm test             # vitest run
 npx vitest           # vitest (watch mode)
-node build/index.js  # run (stdio MCP server; invoke via MCP host, not directly)
+node build/index.js    # run (stdio MCP server; invoke via MCP host, not directly)
+node build/index.js --serve  # run (HTTP server: Express UI on :4321 + MCP on /mcp)
+npm run ui             # same as above (port via FIXTURE_UI_PORT env)
 ```
 
 Tests live in `src/__tests__/*.test.ts` (6 files, 68 tests, 100% coverage across all source files). Mocking strategy: `vi.hoisted()` for module mocks, thenable `chainish` proxy for Drizzle query builder chains, `vi.stubGlobal('fetch')` for HTTP. `.gitignore` excludes `node_modules/`, `build/`, `.vscode/`, `fixture.db`.
 
 ## Architecture
 
-- **Entrypoint**: `src/index.ts` — registers 15 MCP tools on `StdioServerTransport`.
+- **Entrypoint**: `src/index.ts` — registers 15 MCP tools. Runs in stdio mode by default (MCP). With `--serve` flag or `FIXTURE_UI_PORT` env, starts Express HTTP server serving UI and streamable HTTP MCP at `/mcp`.
 - **Package bin name**: `fixture-mcp`. Set via `"bin": {"fixture-mcp": "./build/index.js"}` in `package.json`.
 - **Database**: `fixture.db` created lazily by better-sqlite3 in `src/db/client.ts` (no migrations, no drizzle-kit config). Not in `.gitignore` — guard against committing it.
 - **Schema** (`src/db/schema.ts`): 5 tables — `sessions`, `contexts`, `events`, `workflows`, `workflow_runs`.
