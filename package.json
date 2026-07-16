@@ -34,6 +34,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "inspect": "npx @modelcontextprotocol/inspector node build/index.js",
+    "ui": "node build/server.js",
+    "start": "node build/server.js",
+    "seed": "node scripts/seed.mjs",
     "postinstall": "npm rebuild better-sqlite3"
   },
   "files": [
@@ -44,10 +47,12 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "better-sqlite3": "^12.11.1",
     "drizzle-orm": "^0.45.2",
+    "express": "^5.2.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
+    "@types/express": "^5.0.6",
     "@types/node": "^26.1.1",
     "@vitest/coverage-v8": "^4.1.10",
     "drizzle-kit": "^0.31.10",

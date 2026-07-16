@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workflow · Fixture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="app">
+  <a class="back" href="/">&larr; Dashboard</a>
+  <h1 id="title"></h1>
+  <div class="desc" id="desc"></div>
+
+  <div id="steps"></div>
+
+  <div id="controls">
+    <button class="btn" id="run-btn" onclick="startRun()">Run Workflow</button>
+    <span id="run-status"></span>
+  </div>
+
+  <div id="input-dialog">
+    <h3>Input Required</h3>
+    <p id="input-prompt"></p>
+    <input id="input-value" placeholder="Enter value..." autofocus />
+    <div class="dialog-actions">
+      <button class="btn" onclick="submitInput()">Submit</button>
+      <button class="btn btn-secondary" onclick="cancelInput()">Cancel</button>
+    </div>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const slug = params.get("slug");
+let currentToken = null;
+let currentCaptureVar = null;
+
+async function load() {
+  if (!slug) { document.getElementById("title").textContent = "No workflow specified."; return; }
+  const wf = await fetch(`/api/workflows/${encodeURIComponent(slug)}`).then(r => r.ok ? r.json() : null);
+  if (!wf) { document.getElementById("title").textContent = "Workflow not found."; return; }
+
+  document.getElementById("title").textContent = wf.slug;
+  document.getElementById("desc").textContent = wf.description ?? "";
+
+  const steps = JSON.parse(wf.steps);
+  document.getElementById("steps").innerHTML = `<div class="steps-header">Steps (${steps.length})</div>${
+    steps.map((s, i) => {
+      const method = s.method ?? "GET";
+      const url = s.url ?? "";
+      const isInput = !!s.requiresInput;
+      return `<div class="step">
+        <div class="step-header" onclick="toggleStep(${i})">
+          <span class="step-num">${i + 1}.</span>
+          <span class="step-id">${esc(s.id)}</span>
+          ${isInput ? `<span class="step-input">manual input</span>` : `<span class="step-method step-method-${method}">${method}</span>`}
+          <span class="step-url">${esc(url)}</span>
+        </div>
+        <div class="step-detail" id="step-detail-${i}">
+          <pre>${esc(JSON.stringify(s, null, 2))}</pre>
+        </div>
+      </div>`;
+    }).join("")
+  }`;
+}
+
+function toggleStep(i) {
+  document.getElementById(`step-detail-${i}`).classList.toggle("open");
+}
+
+async function startRun() {
+  const btn = document.getElementById("run-btn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Running...';
+  document.getElementById("run-status").textContent = "";
+  document.getElementById("results").innerHTML = "";
+  document.getElementById("input-dialog").classList.remove("open");
+
+  try {
+    const res = await fetch(`/api/workflows/${encodeURIComponent(slug)}/run`, { method: "POST" });
+    const data = await res.json();
+    handleRunResult(data);
+  } catch (err) {
+    document.getElementById("results").innerHTML = `<div class="error-msg">Error: ${err}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Run Workflow";
+  }
+}
+
+function handleRunResult(data) {
+  if (data.status === "paused") {
+    currentToken = data.continuationToken;
+    currentCaptureVar = data.step?.requiresInput?.captureVar ?? "input";
+    document.getElementById("input-prompt").innerHTML = `<span class="var-name">$${esc(currentCaptureVar)}</span>: ${esc(data.prompt)}`;
+    document.getElementById("input-value").value = "";
+    document.getElementById("input-dialog").classList.add("open");
+    document.getElementById("run-status").innerHTML = '<span class="status-badge status-paused">Paused</span>';
+  } else if (data.status === "completed") {
+    document.getElementById("run-status").innerHTML = '<span class="status-badge status-completed">Completed</span>';
+    renderResults(data.results, data.session);
+  } else if (data.status === "error") {
+    document.getElementById("run-status").innerHTML = '<span class="status-badge status-failed">Error</span>';
+    document.getElementById("results").innerHTML = `<div class="error-msg">${esc(data.message ?? JSON.stringify(data))}</div>`;
+  } else {
+    document.getElementById("results").innerHTML = `<pre>${esc(JSON.stringify(data, null, 2))}</pre>`;
+  }
+}
+
+async function submitInput() {
+  const value = document.getElementById("input-value").value.trim();
+  if (!value) return;
+
+  document.getElementById("input-dialog").classList.remove("open");
+  document.getElementById("run-status").innerHTML = '<span class="status-badge status-running">Running...</span>';
+
+  try {
+    const res = await fetch("/api/workflows/continue", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: currentToken, input: value }),
+    });
+    const data = await res.json();
+    currentToken = null;
+    currentCaptureVar = null;
+    handleRunResult(data);
+  } catch (err) {
+    document.getElementById("results").innerHTML = `<div class="error-msg">Error: ${err}</div>`;
+    document.getElementById("run-status").innerHTML = "";
+  }
+}
+
+function cancelInput() {
+  document.getElementById("input-dialog").classList.remove("open");
+  document.getElementById("run-status").innerHTML = "";
+  currentToken = null;
+  currentCaptureVar = null;
+}
+
+function renderResults(results, sessionSlug) {
+  if (!results || !results.length) {
+    document.getElementById("results").innerHTML = '<div class="empty">No results</div>';
+    return;
+  }
+
+  document.getElementById("results").innerHTML = `<div class="results-header">
+    <h2>Results</h2>
+    ${sessionSlug ? `<a href="/session.html?slug=${encodeURIComponent(sessionSlug)}">View events &rarr;</a>` : ""}
+  </div>${
+    results.map(r => {
+      const statusClass = r.status;
+      return `<div class="result">
+        <div class="result-header">
+          <span class="result-step-id">${esc(r.stepId)}</span>
+          <span class="result-status result-status-${statusClass}">${r.status}</span>
+        </div>
+        <div class="result-detail">
+          ${r.output ? `<h4>Response</h4><pre>${esc(JSON.stringify(r.output, null, 2))}</pre>` : ""}
+          ${r.assertions && r.assertions.length ? `<h4>Assertions</h4><pre>${esc(JSON.stringify(r.assertions, null, 2))}</pre>` : ""}
+          ${r.error ? `<h4>Error</h4><pre>${esc(r.error)}</pre>` : ""}
+        </div>
+      </div>`;
+    }).join("")
+  }`;
+}
+
+function esc(s) { if (s == null) return ""; const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+load();
+</script>
+</body>
+</html>

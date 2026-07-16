@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fixture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Fixture</h1>
+    <span class="subtitle">api testing · stateful</span>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="section">
+    <h2>Sessions <a href="/sessions.html" style="font-size:0.8rem;font-weight:500;text-transform:none;letter-spacing:0;margin-left:0.75rem;">View all &rarr;</a></h2>
+    <div class="table-wrap" id="sessions"><div class="empty">Loading...</div></div>
+  </div>
+
+  <div class="section">
+    <h2>Workflows <a href="/workflows.html" style="font-size:0.8rem;font-weight:500;text-transform:none;letter-spacing:0;margin-left:0.75rem;">View all &rarr;</a></h2>
+    <div class="table-wrap" id="workflows"><div class="empty">Loading...</div></div>
+  </div>
+</div>
+
+<script>
+async function load() {
+  const [stats, sessions, workflows] = await Promise.all([
+    fetch("/api/stats").then(r => r.json()),
+    fetch("/api/sessions").then(r => r.json()),
+    fetch("/api/workflows").then(r => r.json()),
+  ]);
+
+  document.getElementById("stats").innerHTML = `
+    <a class="stat" href="/context-global.html"><div class="stat-value">${stats.globalContexts}</div><div class="stat-label">Global Context</div></a>
+    <a class="stat" href="/context-local.html"><div class="stat-value">${stats.localContexts}</div><div class="stat-label">Local Context</div></a>
+    <a class="stat" href="/sessions.html"><div class="stat-value">${stats.sessions}</div><div class="stat-label">Sessions</div></a>
+    <a class="stat" href="/workflows.html"><div class="stat-value">${stats.workflows}</div><div class="stat-label">Workflows</div></a>
+  `;
+
+  document.getElementById("sessions").innerHTML = sessions.length
+    ? `<table><thead><tr><th>Slug</th><th>Description</th><th>Created</th></tr></thead><tbody>${
+        sessions.map(s => `<tr><td class="slug"><a href="/session.html?slug=${encodeURIComponent(s.slug)}">${s.slug}</a></td><td>${esc(s.description ?? "")}</td><td style="color:var(--text-muted);font-size:0.8rem;">${fmt(s.createdAt)}</td></tr>`).join("")
+      }</tbody></table>`
+    : `<div class="empty">No sessions yet. Create one with <code>session_create</code>.</div>`;
+
+  document.getElementById("workflows").innerHTML = workflows.length
+    ? `<table><thead><tr><th>Slug</th><th>Description</th><th>Steps</th><th></th></tr></thead><tbody>${
+        workflows.map(w => {
+          const steps = JSON.parse(w.steps);
+          return `<tr><td class="slug"><a href="/workflow.html?slug=${encodeURIComponent(w.slug)}">${w.slug}</a></td><td>${esc(w.description ?? "")}</td><td style="color:var(--text-muted);font-size:0.8rem;">${steps.length} steps</td><td><a class="run-link" href="/workflow.html?slug=${encodeURIComponent(w.slug)}">Run &rarr;</a></td></tr>`;
+        }).join("")
+      }</tbody></table>`
+    : `<div class="empty">No workflows yet. Create one with <code>workflow_create</code>.</div>`;
+}
+
+function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+function fmt(ts) { return new Date(ts).toLocaleString(); }
+load();
+</script>
+</body>
+</html>

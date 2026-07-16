@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Global Context · Fixture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="app">
+  <a class="back" href="/">&larr; Dashboard</a>
+  <h1>Global Context</h1>
+  <div class="meta">Context entries with global scope, accessible across all sessions.</div>
+  <div class="table-wrap" id="contexts"><div class="empty">Loading...</div></div>
+</div>
+
+<script>
+async function load() {
+  const entries = await fetch("/api/context/global").then(r => r.json());
+
+  if (!entries.length) {
+    document.getElementById("contexts").innerHTML = '<div class="empty">No global context entries yet. Create one with <code>context_create</code> with scope <code>"global"</code>.</div>';
+    return;
+  }
+
+  document.getElementById("contexts").innerHTML = `<table><thead><tr><th>Field</th><th>Value</th><th>Description</th><th>Created</th></tr></thead><tbody>${
+    entries.map(e => `<tr><td class="slug">${esc(e.field)}</td><td class="mono" style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(e.value)}</td><td>${esc(e.description ?? "")}</td><td style="color:var(--text-muted);font-size:0.8rem;">${fmt(e.createdAt)}</td></tr>`).join("")
+  }</tbody></table>`;
+}
+
+function esc(s) { if (s == null) return ""; const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+function fmt(ts) { return new Date(ts).toLocaleString(); }
+load();
+</script>
+</body>
+</html>
