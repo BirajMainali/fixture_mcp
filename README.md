@@ -126,7 +126,7 @@ Each database is independent, so you can have separate databases for different p
 
 ## How to instruct AI to use it effectively
 
-See [`PROMPT.md`](./PROMPT.md). A self-contained prompt you can give to any AI agent. It covers when to use each tool, how to use them with examples, workflow details (interpolation, extraction, assertions, manual input), and rules/gotchas.
+See [`commands/usefixture.md`](./commands/usefixture.md). A self-contained prompt you can give to any AI agent. It covers when to use each tool, how to use them with examples, workflow details (interpolation, extraction, assertions, manual input), and rules/gotchas.
 
 ## Building from source
 
