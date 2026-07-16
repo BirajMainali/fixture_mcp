@@ -43,7 +43,7 @@ Data lives in a local SQLite file. No network, no cloud, no setup.
 
 ## How it works
 
-All data is stored in a local `fixture.db` file created automatically in the working directory. The schema has five tables: sessions, contexts, events, workflows, and workflow_runs.
+All data is stored in a local `fixture.db` file created automatically in the working directory (override path via `FIXTURE_DB_PATH` env var). The schema has five tables: sessions, contexts, events, workflows, and workflow_runs.
 
 - Sessions are string slugs chosen by the agent, not auto-generated IDs. This lets the agent name sessions meaningfully (e.g. "user-registration").
 - Context entries are key-value pairs scoped to a session or globally. They store extracted data like auth tokens or user IDs.
@@ -75,13 +75,22 @@ This is not a standalone CLI. It is an MCP server that communicates over stdin/s
   "mcpServers": {
     "fixture-mcp": {
       "command": "npx",
-      "args": ["fixture-mcp"]
+      "args": ["fixture-mcp"],
+      "env": {
+        "FIXTURE_DB_PATH": "/path/to/custom.db"
+      }
     }
   }
 }
 ```
 
-The database file `fixture.db` is created in the working directory where the server runs. Each database is independent, so you can have separate databases for different projects or agents.
+The database file `fixture.db` is created in the working directory where the server runs. Override the path with the `FIXTURE_DB_PATH` environment variable:
+
+```
+FIXTURE_DB_PATH=/path/to/custom.db fixture-mcp
+```
+
+Each database is independent, so you can have separate databases for different projects or agents.
 
 ## How to instruct AI to use it effectively
 

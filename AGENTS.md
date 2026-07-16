@@ -19,7 +19,7 @@ Tests live in `src/__tests__/*.test.ts` (6 files, 68 tests, 100% coverage across
 
 - **Entrypoint**: `src/index.ts` — registers 15 MCP tools. Runs in stdio mode by default (MCP). With `--serve` flag or `FIXTURE_UI_PORT` env, starts Express HTTP server serving UI and streamable HTTP MCP at `/mcp`.
 - **Package bin name**: `fixture-mcp`. Set via `"bin": {"fixture-mcp": "./build/index.js"}` in `package.json`.
-- **Database**: `fixture.db` created lazily by better-sqlite3 in `src/db/client.ts` (no migrations, no drizzle-kit config). Not in `.gitignore` — guard against committing it.
+- **Database**: `fixture.db` created lazily by better-sqlite3 in `src/db/client.ts` (no migrations, no drizzle-kit config). Not in `.gitignore` — guard against committing it. Path overridable via `FIXTURE_DB_PATH` env var.
 - **Schema** (`src/db/schema.ts`): 5 tables — `sessions`, `contexts`, `events`, `workflows`, `workflow_runs`.
 - **IDs**: `crypto.randomUUID()` — requires Node 19+.
 - **ESM**: All imports use `.js` extensions (Node16 moduleResolution). `"type": "module"` in package.json.
