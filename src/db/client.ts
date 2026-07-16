@@ -8,7 +8,8 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRoot = path.resolve(__dirname, "../..")
 
-const sqllite = new Database(path.join(projectRoot, "fixture.db"));
+const dbPath = process.env.FIXTURE_DB_PATH ?? path.join(projectRoot, "fixture.db");
+const sqllite = new Database(dbPath);
 
 const db = drizzle(sqllite);
 

@@ -1,0 +1,53 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="32" y1="32" x2="224" y2="224" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Curly braces -->
+  <path d="M72 64
+           C54 64 54 82 54 94
+           V110
+           C54 120 48 126 40 128
+           C48 130 54 136 54 146
+           V162
+           C54 174 54 192 72 192"
+        stroke="url(#g)"
+        stroke-width="12"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <path d="M184 64
+           C202 64 202 82 202 94
+           V110
+           C202 120 208 126 216 128
+           C208 130 202 136 202 146
+           V162
+           C202 174 202 192 184 192"
+        stroke="url(#g)"
+        stroke-width="12"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- AI Node -->
+  <circle cx="128" cy="128" r="46"
+          stroke="#111827"
+          stroke-width="12"
+          fill="white"/>
+
+  <!-- Network -->
+  <line x1="128" y1="54" x2="128" y2="82"
+        stroke="#111827"
+        stroke-width="10"
+        stroke-linecap="round"/>
+  <circle cx="128" cy="40" r="10" fill="#111827"/>
+
+  <!-- Check -->
+  <path d="M108 129L121 142L148 114"
+        stroke="#10B981"
+        stroke-width="10"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+</svg>

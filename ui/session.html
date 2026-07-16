@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session · Fixture</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="header-left">
+      <img src="/favicon.svg" alt="" class="logo">
+      <a class="back" href="/">&larr; Dashboard</a>
+      <h1 id="slug"></h1>
+    </div>
+  </header>
+  <div class="meta" id="meta"></div>
+  <div id="events"><div class="empty">Loading...</div></div>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const slug = params.get("slug");
+
+async function load() {
+  if (!slug) { document.getElementById("events").innerHTML = '<div class="empty">No session slug specified.</div>'; return; }
+
+  const [session, events] = await Promise.all([
+    fetch(`/api/sessions/${encodeURIComponent(slug)}`).then(r => r.ok ? r.json() : null),
+    fetch(`/api/sessions/${encodeURIComponent(slug)}/events`).then(r => r.json()),
+  ]);
+
+  document.getElementById("slug").textContent = session ? session.slug : slug;
+  document.getElementById("meta").textContent = session
+    ? `${session.description ?? "No description"} · ${new Date(session.createdAt).toLocaleString()}`
+    : "";
+
+  if (!events.length) {
+    document.getElementById("events").innerHTML = '<div class="empty">No events recorded for this session.</div>';
+    return;
+  }
+
+  document.getElementById("events").innerHTML = events.map((e, i) => {
+    let inp, out;
+    try { inp = JSON.parse(e.input); } catch { inp = e.input; }
+    try { out = JSON.parse(e.output); } catch { out = e.output; }
+
+    const method = inp?.method ?? "?";
+    const url = inp?.url ?? "";
+    const status = out?.status ?? "";
+    const statusClass = status ? (status < 300 ? "2xx" : status < 400 ? "3xx" : status < 500 ? "4xx" : "5xx") : "";
+    const reason = e.reason ?? inp?.reason ?? "";
+
+    return `<div class="event">
+      <div class="event-header" onclick="toggle(${i})">
+        <span class="arrow" id="arrow-${i}">&#9654;</span>
+        <span class="method method-${method}">${method}</span>
+        <span class="url">${esc(url)}</span>
+        ${status ? `<span class="status status-${statusClass}">${status}</span>` : ""}
+        <span class="reason">${esc(reason)}</span>
+        <span class="timestamp">${fmt(e.createdAt)}</span>
+      </div>
+      <div class="event-body" id="body-${i}">
+        <h3>Input</h3>
+        <pre>${esc(JSON.stringify(inp, null, 2))}</pre>
+        <h3>Output</h3>
+        <pre>${esc(JSON.stringify(out, null, 2))}</pre>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function toggle(i) {
+  const body = document.getElementById(`body-${i}`);
+  const arrow = document.getElementById(`arrow-${i}`);
+  body.classList.toggle("open");
+  arrow.classList.toggle("open");
+}
+
+function esc(s) { if (s == null) return ""; const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+function fmt(ts) { return new Date(ts).toLocaleString(); }
+load();
+</script>
+</body>
+</html>
